@@ -88,6 +88,7 @@ TELEGRAM_CHANNEL_ID = config("TELEGRAM_CHANNEL_ID")
 # Initialize Telegram bot
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
 
+
 async def fetch_and_send():
     try:
         # Send request to the API
@@ -107,24 +108,36 @@ async def fetch_and_send():
             node = edge.get("node", {})
             end_date = datetime.strptime(node.get("endDate"), RAVINDEX_OUTPUT_DATE_FORMAT)
             loss_in_break_even_percentages = f"{node.get('coverCallFinalPriceDiffPercentByBasePrice'):.2f}"
+            symbol = node.get('security', {}).get('symbol')
+            highest_bid_price = node.get('security', {}).get('orderBook', {}).get('highestBidPrice')
+            lowest_ask_price = int(
+                node.get('security', {}).get('orderBook', {}).get('lowestAskPrice')
+            ) - 10  # 10 rials less than the lowest in the market
+            cover_call_final_price = node.get('coverCallFinalPrice')
+            base_symbol = node.get('baseSecurity', {}).get('symbol')
+            base_symbol_lowest_ask_price = node.get('baseSecurity', {}).get('orderBook', {}).get('lowestAskPrice')
+            days_to_maturity = (end_date - today).days
+            cover_call_in_end_date_profit = node.get('coverCallInEndDate')
+            annual_profit_percentage = node.get('coverCall')
+            monthly_profit_percentage = cover_call_in_end_date_profit / days_to_maturity * 30
+            delta = node.get('data', {}).get('delta')
+
             message = (
                 # f"ID: {node.get('id')}\n"
-                f"نماد: {node.get('security', {}).get('symbol')}\n"
-                f"قیمت تقاضا: {node.get('security', {}).get('orderBook', {}).get('highestBidPrice')}\n"
-                f"قیمت عرضه: {node.get('security', {}).get('orderBook', {}).get('lowestAskPrice')}\n"
+                f"نماد: {symbol}\n"
+                f"قیمت لحظه: {highest_bid_price}\n"
+                f"قیمت مناسب برای سفارش گذاری: {lowest_ask_price}\n"
                 f"قیمت اعمال: {node.get('strickPrice')}\n"
-                f"سربه‌سر: {node.get('coverCallFinalPrice')}({loss_in_break_even_percentages})\n"
+                f"سربه‌سر: {cover_call_final_price}({loss_in_break_even_percentages})\n"
                 "\n--------------------------------------------------\n\n"
-                f"نماد سهام پایه: {node.get('baseSecurity', {}).get('symbol')}\n"
-                f"قیمت عرضه سهام پایه: {node.get('baseSecurity', {}).get('orderBook', {}).get('lowestAskPrice')}\n"
-                f"مانده تا سررسید: {(end_date - today).days} روز\n"
+                f"نماد سهام پایه: {base_symbol}\n"
+                f"قیمت عرضه سهام پایه: {base_symbol_lowest_ask_price}\n"
+                f"مانده تا سررسید: {days_to_maturity} روز\n"
                 "\n--------------------------------------------------\n\n"
-                f"سود در صورت اعمال: {node.get('coverCallProfit')}\n"
-                f"درصد سود در سررسید: {node.get('coverCallInEndDate'):.2f}\n"
-                f"درصد سود سالانه: {node.get('coverCall'):.2f}\n"
-                f"مبلغ قابل‌ خرید: {node.get('coverCallVolume')}\n"
-                f"دلتا: {node.get('data', {}).get('delta')}\n"
-                # f"Guarantee: {node.get('guarantee')}\n"
+                f"درصد سود در سررسید: {cover_call_in_end_date_profit:.2f}\n"
+                f"درصد سود سالانه: {annual_profit_percentage:.2f}\n"
+                f"درصد سود ماهیانه: {monthly_profit_percentage:.2f}\n"
+                f"احتمال تحقق: {delta}\n"
             )
             await bot.send_message(chat_id=TELEGRAM_CHANNEL_ID, text=message)
 
