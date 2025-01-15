@@ -1,9 +1,9 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import requests
-from telegram import Bot
 from decouple import config
+from telegram import Bot
 
 LEAST_DESIRED_DELTA = config("LEAST_DESIRED_DELTA", 0.8, cast=float)
 LEAST_COVERED_CALL_PROFIT = config("LEAST_COVERED_CALL_PROFIT", 60, cast=int)
@@ -24,6 +24,9 @@ API_BODY = {
     "variables": {
         "first": 20,
         "data_Delta_Gte": LEAST_DESIRED_DELTA,
+        "endDate_Gte": datetime.today().strftime("%Y-%m-%d"),
+        "endDate_Lte": (datetime.today() + timedelta(days=15)).strftime("%Y-%m-%d"),
+        # todo: 15 must be configurable in above line
         "orderBy": "-coverCall,id",
         "coverCallGte": LEAST_COVERED_CALL_PROFIT,
     },
@@ -113,6 +116,7 @@ async def fetch_and_send():
             lowest_ask_price = int(
                 node.get('security', {}).get('orderBook', {}).get('lowestAskPrice')
             ) - 10  # 10 rials less than the lowest in the market
+            strick_price = node.get('strickPrice')
             cover_call_final_price = node.get('coverCallFinalPrice')
             base_symbol = node.get('baseSecurity', {}).get('symbol')
             base_symbol_lowest_ask_price = node.get('baseSecurity', {}).get('orderBook', {}).get('lowestAskPrice')
@@ -127,7 +131,7 @@ async def fetch_and_send():
                 f"نماد: {symbol}\n"
                 f"قیمت لحظه: {highest_bid_price}\n"
                 f"قیمت مناسب برای سفارش گذاری: {lowest_ask_price}\n"
-                f"قیمت اعمال: {node.get('strickPrice')}\n"
+                f"قیمت اعمال: {strick_price}\n"
                 f"سربه‌سر: {cover_call_final_price}({loss_in_break_even_percentages})\n"
                 "\n--------------------------------------------------\n\n"
                 f"نماد سهام پایه: {base_symbol}\n"
