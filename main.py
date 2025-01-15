@@ -5,8 +5,8 @@ import requests
 from telegram import Bot
 from decouple import config
 
-LEAST_DESIRED_DELTA = config("LEAST_DESIRED_DELTA", 0.9, cast=float)
-LEAST_COVERED_CALL_PROFIT = config("LEAST_COVERED_CALL_PROFIT", 80, cast=int)
+LEAST_DESIRED_DELTA = config("LEAST_DESIRED_DELTA", 0.8, cast=float)
+LEAST_COVERED_CALL_PROFIT = config("LEAST_COVERED_CALL_PROFIT", 60, cast=int)
 
 POLLING_INTERVAL_MINUTES = config("POLLING_INTERVAL_MINUTES", 5, cast=int)
 
